@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM-ассистент · YouGile</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; padding: 24px 16px; }
+  .container { max-width: 640px; margin: 0 auto; }
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .logo { width: 40px; height: 40px; background: #1a1a2e; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #7c6af7; font-size: 20px; }
+  h1 { font-size: 20px; font-weight: 600; }
+  .sub { font-size: 13px; color: #666; }
+
+  .card { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 16px 20px; margin-bottom: 16px; }
+  .card-gray { background: #f9f9f6; }
+  label { font-size: 12px; color: #666; display: block; margin-bottom: 6px; }
+  select, input { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fff; color: #1a1a1a; outline: none; }
+  select:focus, input:focus { border-color: #7c6af7; }
+  textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-height: 100px; resize: vertical; font-family: inherit; outline: none; background: #f9f9f6; }
+  textarea:focus { border-color: #7c6af7; background: #fff; }
+  .sec-title { font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  .row { display: flex; gap: 10px; margin-top: 12px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
+
+  .btn { background: #1a1a2e; color: #fff; border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+  .btn:hover { background: #2d2d50; }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn-outline { background: transparent; border: 1px solid #ddd; border-radius: 8px; padding: 10px 14px; font-size: 14px; cursor: pointer; color: #666; }
+  .btn-outline:hover { background: #f5f5f0; }
+  .btn-sm { background: transparent; border: 1px solid #ddd; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; color: #666; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-sm:hover { background: #f5f5f0; }
+
+  .status { padding: 10px 14px; border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .s-load { background: #e8f0fe; color: #1a73e8; }
+  .s-ok { background: #e6f4ea; color: #137333; }
+  .s-err { background: #fce8e6; color: #c5221f; }
+  .s-info { background: #f5f5f0; color: #666; }
+  .spin { width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: sp 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+  .b-h { background: #fce8e6; color: #c5221f; }
+  .b-m { background: #fef7e0; color: #b06000; }
+  .b-l { background: #e6f4ea; color: #137333; }
+
+  .preview { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 16px 20px; margin-bottom: 16px; }
+  .field-lbl { font-size: 11px; color: #999; margin-bottom: 3px; }
+  .field-val { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">⚡</div>
+    <div>
+      <h1>PM-ассистент</h1>
+      <div class="sub">YouGile · Claude AI</div>
+    </div>
+  </div>
+
+  <div class="card card-gray">
+    <div class="flex-between" style="margin-bottom:12px;">
+      <div class="sec-title" style="margin:0;">Проект и колонка</div>
+      <button class="btn-sm" onclick="loadProjects()">↻ Загрузить проекты</button>
+    </div>
+    <div class="row-2">
+      <div>
+        <label>Проект</label>
+        <select id="project-select" onchange="loadColumns()">
+          <option value="">— выбери проект —</option>
+        </select>
+      </div>
+      <div>
+        <label>Колонка</label>
+        <select id="column-select">
+          <option value="">— выбери колонку —</option>
+        </select>
+      </div>
+    </div>
+    <div id="proj-status"></div>
+  </div>
+
+  <div class="card">
+    <div class="sec-title">Опиши задачу в свободной форме</div>
+    <textarea id="task-input" placeholder="Например: исправить баг с авторизацией на iOS, высокий приоритет, назначить на Алексея, дедлайн пятница..."></textarea>
+    <hr>
+    <div class="row">
+      <button class="btn" onclick="parseTask()" id="parse-btn">✦ Разобрать задачу</button>
+      <button class="btn-outline" onclick="clearAll()">Очистить</button>
+    </div>
+  </div>
+
+  <div id="status-area"></div>
+  <div id="preview-area"></div>
+</div>
+
+<script>
+const API = '';
+let parsedTask = null;
+
+function setStatus(type, msg, id='status-area') {
+  const icons = { load: '<div class="spin"></div>', ok: '✓', err: '✗', info: 'ℹ' };
+  const cls = { load: 's-load', ok: 's-ok', err: 's-err', info: 's-info' };
+  document.getElementById(id).innerHTML = `<div class="status ${cls[type]}">${icons[type]} ${msg}</div>`;
+}
+
+async function loadProjects() {
+  const sel = document.getElementById('project-select');
+  setStatus('load', 'Загружаю проекты...', 'proj-status');
+  try {
+    const r = await fetch(`${API}/projects`);
+    const j = await r.json();
+    const list = j.content || j.list || j.projects || j.data || [];
+    if (!list.length) { setStatus('err', 'Проекты не найдены. Ответ: ' + JSON.stringify(j).slice(0,100), 'proj-status'); return; }
+    sel.innerHTML = '<option value="">— выбери проект —</option>' + list.map(p=>`<option value="${p.id}">${p.title||p.name}</option>`).join('');
+    setStatus('ok', `Загружено ${list.length} проектов`, 'proj-status');
+  } catch(e) {
+    setStatus('err', 'Ошибка: ' + e.message, 'proj-status');
+  }
+}
+
+async function loadColumns() {
+  const projectId = document.getElementById('project-select').value;
+  const sel = document.getElementById('column-select');
+  if (!projectId) { sel.innerHTML = '<option value="">— выбери колонку —</option>'; return; }
+  sel.innerHTML = '<option>Загружаю...</option>';
+  try {
+    const r = await fetch(`${API}/columns?projectId=${projectId}`);
+    const j = await r.json();
+    const list = j.content || j.list || j.columns || j.data || [];
+    if (!list.length) { sel.innerHTML = '<option value="">Колонки не найдены</option>'; return; }
+    sel.innerHTML = list.map(c=>`<option value="${c.id}">${c.title||c.name}</option>`).join('');
+  } catch(e) {
+    sel.innerHTML = '<option value="">Ошибка загрузки</option>';
+  }
+}
+
+function badge(p) {
+  if (p==='Важно') return '<span class="badge b-h">Важно</span>';
+  if (p==='Не важно') return '<span class="badge b-l">Не важно</span>';
+  return '<span class="badge b-m">Нормально</span>';
+}
+
+async function parseTask() {
+  const text = document.getElementById('task-input').value.trim();
+  if (!text) { setStatus('info', 'Напиши описание задачи'); return; }
+  const btn = document.getElementById('parse-btn');
+  btn.disabled = true;
+  setStatus('load', 'Claude разбирает задачу...');
+  document.getElementById('preview-area').innerHTML = '';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+        system: `PM-ассистент. Верни ТОЛЬКО JSON без markdown:
+{"title":"до 80 символов","description":"подробно","priority":"Важно|Нормально|Не важно","assignee":"имя или null","deadline":"YYYY-MM-DD или null"}
+Высокий/критический=Важно, средний=Нормально, низкий=Не важно. Дедлайн считай от 4 июня 2026.`,
+        messages: [{ role: 'user', content: text }]
+      })
+    });
+    const d = await r.json();
+    const raw = d.content?.map(b=>b.text||'').join('')||'';
+    parsedTask = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    document.getElementById('status-area').innerHTML = '';
+    showPreview(parsedTask);
+  } catch(e) {
+    setStatus('err', 'Ошибка разбора: ' + e.message);
+  } finally { btn.disabled = false; }
+}
+
+function showPreview(t) {
+  document.getElementById('preview-area').innerHTML = `
+    <div class="preview">
+      <div class="sec-title">Проверь задачу перед отправкой</div>
+      <div class="row-2">
+        <div><div class="field-lbl">Название</div><div class="field-val">${t.title||'—'}</div></div>
+        <div><div class="field-lbl">Приоритет</div><div class="field-val">${badge(t.priority)}</div></div>
+      </div>
+      <div class="row-2">
+        <div><div class="field-lbl">Исполнитель</div><div class="field-val">${t.assignee||'Не указан'}</div></div>
+        <div><div class="field-lbl">Дедлайн</div><div class="field-val">${t.deadline||'Не указан'}</div></div>
+      </div>
+      ${t.description?`<div style="margin-top:10px;"><div class="field-lbl">Описание</div><div style="font-size:13px;color:#555;line-height:1.6;margin-top:3px;">${t.description}</div></div>`:''}
+      <hr>
+      <div class="row">
+        <button class="btn" onclick="sendTask()">→ Создать в YouGile</button>
+        <button class="btn-outline" onclick="document.getElementById('preview-area').innerHTML='';parsedTask=null;">Отмена</button>
+      </div>
+    </div>`;
+}
+
+async function sendTask() {
+  const colId = document.getElementById('column-select').value;
+  if (!colId) { setStatus('info', 'Выбери колонку выше'); return; }
+  if (!parsedTask) { setStatus('err', 'Сначала разбери задачу'); return; }
+  setStatus('load', 'Отправка в YouGile...');
+  const body = { title: parsedTask.title, location: colId, stringStickers: { "Приоритет": parsedTask.priority||"Нормально" } };
+  if (parsedTask.description) body.description = parsedTask.description;
+  if (parsedTask.deadline) body.deadline = parsedTask.deadline;
+  try {
+    const r = await fetch(`${API}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (j.result === 'ok') {
+      setStatus('ok', `Задача создана в YouGile! ID: ${j.id}`);
+      document.getElementById('preview-area').innerHTML = '';
+      document.getElementById('task-input').value = '';
+      parsedTask = null;
+    } else {
+      setStatus('err', 'Ошибка YouGile: ' + (j.error||JSON.stringify(j)));
+    }
+  } catch(e) { setStatus('err', 'Ошибка: ' + e.message); }
+}
+
+function clearAll() {
+  document.getElementById('task-input').value = '';
+  document.getElementById('preview-area').innerHTML = '';
+  document.getElementById('status-area').innerHTML = '';
+  parsedTask = null;
+}
+
+// Автозагрузка проектов при открытии
+loadProjects();
+</script>
+</body>
+</html>
