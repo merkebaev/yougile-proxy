@@ -5,7 +5,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const YOUGILE_KEY = process.env.YOUGILE_KEY;
 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.options('*', cors());
 app.use(express.json());
 
 const headers = () => ({
@@ -19,105 +24,76 @@ const headersV2 = () => ({
 });
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', service: 'YouGile PM Proxy' });
+  res.json({ status: 'ok', service: 'YouGile PM Proxy', port: PORT });
 });
 
-// Получить список проектов (v2)
 app.get('/projects', async (req, res) => {
   if (!YOUGILE_KEY) return res.status(500).json({ error: 'YOUGILE_KEY не задан' });
   try {
     const response = await fetch('https://ru.yougile.com/api-v2/projects', {
-      method: 'GET',
-      headers: headersV2()
+      method: 'GET', headers: headersV2()
     });
     const data = await response.json();
     res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Получить список колонок проекта (v2)
 app.get('/columns', async (req, res) => {
   if (!YOUGILE_KEY) return res.status(500).json({ error: 'YOUGILE_KEY не задан' });
   try {
     const url = req.query.projectId
       ? `https://ru.yougile.com/api-v2/columns?projectId=${req.query.projectId}`
       : 'https://ru.yougile.com/api-v2/columns';
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: headersV2()
-    });
+    const response = await fetch(url, { method: 'GET', headers: headersV2() });
     const data = await response.json();
     res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Создать задачу (v1)
 app.post('/tasks', async (req, res) => {
   if (!YOUGILE_KEY) return res.status(500).json({ error: 'YOUGILE_KEY не задан' });
   try {
     const response = await fetch('https://yougile.com/data/api-v1/tasks', {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify(req.body)
+      method: 'POST', headers: headers(), body: JSON.stringify(req.body)
     });
     const data = await response.json();
     res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Изменить задачу (v1)
 app.put('/tasks', async (req, res) => {
   if (!YOUGILE_KEY) return res.status(500).json({ error: 'YOUGILE_KEY не задан' });
   try {
     const response = await fetch('https://yougile.com/data/api-v1/tasks', {
-      method: 'PUT',
-      headers: headers(),
-      body: JSON.stringify(req.body)
+      method: 'PUT', headers: headers(), body: JSON.stringify(req.body)
     });
     const data = await response.json();
     res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Получить пользователей (v1)
 app.get('/users', async (req, res) => {
   if (!YOUGILE_KEY) return res.status(500).json({ error: 'YOUGILE_KEY не задан' });
   try {
     const response = await fetch('https://yougile.com/data/api-v1/users', {
-      method: 'GET',
-      headers: headers()
+      method: 'GET', headers: headers()
     });
     const data = await response.json();
     res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Сообщение в чат задачи (v1)
 app.post('/messages', async (req, res) => {
   if (!YOUGILE_KEY) return res.status(500).json({ error: 'YOUGILE_KEY не задан' });
   try {
     const response = await fetch('https://yougile.com/data/api-v1/messages', {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify(req.body)
+      method: 'POST', headers: headers(), body: JSON.stringify(req.body)
     });
     const data = await response.json();
     res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`YouGile proxy запущен на порту ${PORT}`);
 });
